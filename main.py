@@ -45,8 +45,12 @@ def main():
     output_dir = os.environ.get("MAKEFUN_OUTPUT_DIR") or os.path.dirname(OUTPUT_PATH)
     output_path = os.path.join(output_dir, "entry.txt")
     os.makedirs(output_dir, exist_ok=True)
-    with open(output_path, "w", encoding="utf-8", newline="\n") as f:
+    # Atomic write: a crash mid-write can never leave a partial entry.txt
+    # behind for the scorer to read; the rename is the commit point.
+    tmp_path = output_path + ".tmp"
+    with open(tmp_path, "w", encoding="utf-8", newline="\n") as f:
         f.write(LINE)
+    os.replace(tmp_path, output_path)
     # Read-back verification: the written file must match byte for byte.
     with open(output_path, "r", encoding="utf-8", newline="") as f:
         written = f.read()
